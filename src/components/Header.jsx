@@ -9,7 +9,7 @@ export default function Header() {
   return (
     <header className="bg-white border-b px-6 py-4 shadow flex justify-between items-center">
       <h1 className="text-2xl font-bold text-gray-800">FeatureVote</h1>
-      {user && <span className="text-gray-600 text-sm">Welcome, {user.name}</span>}
+      {user && <span className="text-gray-600 text-sm">Welcome, {user}</span>}
     </header>
   );
 }

@@ -7,11 +7,12 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(() => {localStorage.getItem("message") ? 
         JSON.parse(localStorage.getItem("message")) : ""});
 
-    const login = (token) => {
+    const login = (token, message) => {
         setToken(token);
-        setUser(user); // Mock user data
+        const userEmail = message.split("user:")[1].trim();
+        setUser(userEmail); 
         localStorage.setItem("token", token);
-        localStorage.setUser("user", JSON.stringify({ name: "Bitopi" })); // Mock user data
+        localStorage.setItem("user", user);
     };
 
     const logout = () => {

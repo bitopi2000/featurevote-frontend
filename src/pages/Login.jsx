@@ -14,7 +14,7 @@ export default function Login() {
         e.preventDefault();
         try {
             const response = await api.post("/auth/login", { email, password });
-            login(response.data.token);
+            login(response.data.token, response.data.message);
             navigate("/boards");
         } catch (err) {
             setError("Login failed. Please check your credentials.");
