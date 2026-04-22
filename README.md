@@ -37,8 +37,8 @@ This repository contains the **frontend UI**, built with React and optimized for
 
 ## 📂 Project Structure
 src/
-- ├─ api
-- ├─ auth
+- ├─ api/
+- ├─ auth/
 - ├─ components/
 - ├─ pages/
 - ├─ App.jsx
