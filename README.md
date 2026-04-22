@@ -17,7 +17,7 @@ FeatureVote helps teams:
 - Prioritize features for different boards based on real demand
 - Convert feedback into actionable tasks
 
-This repository contains the **https://github.com/bitopi2000/featurevote-frontend**, built with React and optimized for performance and usability.
+This repository contains the **frontend UI**, built with React and optimized for performance and usability.
 
 ---
 
