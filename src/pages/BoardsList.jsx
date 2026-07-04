@@ -7,6 +7,7 @@ export default function BoardsList() {
     const [feature, setFeature] = useState("");
     const [suggestion, setSuggestion] = useState("");
     const [expanded, setExpanded] = useState(null);
+    const [error, setError] = useState("");
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -21,6 +22,12 @@ export default function BoardsList() {
 
         featchBoards();
     }, []);
+    
+    useEffect(() => {
+      if (error) {
+      setFeature(""); // resets feature once when error appears
+    }
+    }, [error]);
 
     const suggestBoard = async () => {
         try {
@@ -30,12 +37,13 @@ export default function BoardsList() {
              setSuggestion(response.data);
         } catch (error) {
             console.error("Failed to suggest board:", error);
+            setError("Couldn't find any Board to add the feature");
         }
     };
     const getColor = (name) => {
       const nameSplit = name.split(" ") || [name];
       console.log(nameSplit);
-      name = nameSplit[0];
+      name = nameSplit[1];
       console.log(name);
       const map = {
         Web: 'bg-blue-100 border-blue-400',
@@ -114,6 +122,12 @@ export default function BoardsList() {
         <div className="mt-4">
           <p className="font-semibold">Suggested Board:</p>
           <p>{suggestion}</p>
+          setFeature("")
+        </div>
+      )}
+      {error && (
+        <div className="mt-4">
+          <p className="text-red-500 mt-2 text-sm">{error}</p>
         </div>
       )}
     </div>
