@@ -255,7 +255,17 @@ export default function SingleBoardView() {
                                         <select
                                             value={feedback.status || "SUBMITTED"}
                                             onChange={(event) => handleStatusChange(feedbackId, event.target.value)}
-                                            className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            className={`rounded-md border px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                                                feedback.status === "SUBMITTED"
+                                                    ? "border-green-200 bg-green-100 text-green-700"
+                                                    : feedback.status === "PLANNED"
+                                                    ? "border-purple-200 bg-purple-100 text-purple-700"
+                                                    : feedback.status === "IN_PROGRESS"
+                                                    ? "border-yellow-200 bg-yellow-100 text-yellow-700"
+                                                    : feedback.status === "DONE"
+                                                    ? "border-blue-200 bg-blue-100 text-blue-700"
+                                                    : "border-red-200 bg-red-100 text-red-700"
+                                            }`}
                                         >
                                             <option value="SUBMITTED">SUBMITTED</option>
                                             <option value="PLANNED">PLANNED</option>
