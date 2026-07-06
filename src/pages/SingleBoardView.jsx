@@ -130,6 +130,17 @@ export default function SingleBoardView() {
         }
     };
 
+    const handleStatusChange = async (feedbackId, newStatus) => {
+        try {
+            await api.patch(`/boards/feedback/${feedbackId}/status`, { status: newStatus });
+            await fetchSingleBoardView();
+            setVoteMessage(`Status updated to ${newStatus}.`);
+        } catch (error) {
+            console.error("Failed to update status:", error);
+            setVoteMessage("Unable to update status right now.");
+        }
+    };
+
     return (
         <div className="p-8">
             <div className="flex items-center justify-between mb-6">
@@ -241,15 +252,17 @@ export default function SingleBoardView() {
                                         <h5>{feedback.ownerName}</h5>
                                     </td>
                                     <td className="px-6 py-4">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-medium
-                                        ${feedback.status === "SUBMITTED" ? "bg-green-100 text-green-700" :
-                                        feedback.status === "IN_PROGRESS" ? "bg-yellow-100 text-yellow-700" :
-                                        feedback.status === "DONE" ? "bg-blue-100 text-blue-700" :
-                                        "bg-red-100 text-red-700"}
-                                    `}>
-                                        {feedback.status}
-                                    </span>
-                                </td>
+                                        <select
+                                            value={feedback.status || "SUBMITTED"}
+                                            onChange={(event) => handleStatusChange(feedbackId, event.target.value)}
+                                            className="rounded-md border border-gray-300 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="SUBMITTED">SUBMITTED</option>
+                                            <option value="PLANNED">PLANNED</option>
+                                            <option value="IN_PROGRESS">IN_PROGRESS</option>
+                                            <option value="DONE">DONE</option>
+                                        </select>
+                                    </td>
                                     <td className="px-6 py-4 text-center">
                                         <div className="flex items-center justify-center gap-2">
                                             <input
