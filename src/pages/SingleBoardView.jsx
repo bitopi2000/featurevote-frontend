@@ -9,12 +9,14 @@ export default function SingleBoardView() {
     const [feedbacks, setFeedbacks] = useState([]);
     const [singleBoardView, setSingleBoardView] = useState("");
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingFeedbackId, setEditingFeedbackId] = useState(null);
     const [title, setTitle] = useState("");
     const [description, setDescription] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState("");
     const [voteMessage, setVoteMessage] = useState("");
     const [votedFeedbackIds, setVotedFeedbackIds] = useState([]);
+    const [editedFeedbackIds, setEditedFeedbackIds] = useState([]);
 
     const fetchSingleBoardView = async () => {
         try {
@@ -30,7 +32,28 @@ export default function SingleBoardView() {
         fetchSingleBoardView();
     }, [boardId]);
 
-    const addNewFeedback = async (event) => {
+    const resetFeedbackModal = () => {
+        setIsModalOpen(false);
+        setEditingFeedbackId(null);
+        setErrorMessage("");
+        setTitle("");
+        setDescription("");
+    };
+
+    const openAddFeedbackModal = () => {
+        resetFeedbackModal();
+        setIsModalOpen(true);
+    };
+
+    const openEditFeedbackModal = (feedback) => {
+        setEditingFeedbackId(feedback.feedbackId ?? feedback.id);
+        setTitle(feedback.title || "");
+        setDescription(feedback.description || "");
+        setErrorMessage("");
+        setIsModalOpen(true);
+    };
+
+    const handleFeedbackSubmit = async (event) => {
         event.preventDefault();
 
         if (!title.trim() || !description.trim()) {
@@ -45,20 +68,28 @@ export default function SingleBoardView() {
             title: title.trim(),
             description: description.trim(),
             ownerName: user || localStorage.getItem("user") || "Anonymous",
-            status: "SUBMITTED",
         };
 
         try {
-            const endpoint = `/boards/${boardId}/feedback`;
-            await api.post(endpoint, payload);
+            if (editingFeedbackId) {
+                await api.patch(`/boards/feedback/${editingFeedbackId}`, payload);
+                setEditedFeedbackIds((prev) => (prev.includes(editingFeedbackId) ? prev : [...prev, editingFeedbackId]));
+                setVoteMessage("Feedback updated.");
+            } else {
+                await api.post(`/boards/${boardId}/feedback`, {
+                    ...payload,
+                    status: "SUBMITTED",
+                });
+                setVoteMessage("Feedback added.");
+            }
 
             await fetchSingleBoardView();
-            setIsModalOpen(false);
-            setTitle("");
-            setDescription("");
+            resetFeedbackModal();
         } catch (error) {
-            console.error("Failed to add feedback:", error);
-            setErrorMessage("Unable to add feedback right now.");
+            console.error("Failed to save feedback:", error);
+            setErrorMessage(
+                editingFeedbackId ? "Unable to update feedback right now." : "Unable to add feedback right now."
+            );
         } finally {
             setIsSubmitting(false);
         }
@@ -141,13 +172,29 @@ export default function SingleBoardView() {
         }
     };
 
+    const handleDeleteFeedback = async (feedbackId) => {
+        const isConfirmed = window.confirm("Are you sure you want to delete this feedback?");
+        if (!isConfirmed) {
+            return;
+        }
+
+        try {
+            await api.delete(`/boards/feedback/${feedbackId}`);
+            await fetchSingleBoardView();
+            setVoteMessage("Feedback deleted.");
+        } catch (error) {
+            console.error("Failed to delete feedback:", error);
+            setVoteMessage("Unable to delete feedback right now.");
+        }
+    };
+
     return (
         <div className="p-8">
             <div className="flex items-center justify-between mb-6">
                 <h5 className="text-2xl font-bold">{singleBoardView}</h5>
                 <button
                     type="button"
-                    onClick={() => setIsModalOpen(true)}
+                    onClick={openAddFeedbackModal}
                     className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
                     Add new feedback
@@ -158,22 +205,17 @@ export default function SingleBoardView() {
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
                     <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-xl font-semibold">Add new feedback</h3>
+                            <h3 className="text-xl font-semibold">{editingFeedbackId ? "Edit feedback" : "Add new feedback"}</h3>
                             <button
                                 type="button"
-                                onClick={() => {
-                                    setIsModalOpen(false);
-                                    setErrorMessage("");
-                                    setTitle("");
-                                    setDescription("");
-                                }}
+                                onClick={resetFeedbackModal}
                                 className="text-gray-500 hover:text-gray-700"
                             >
                                 ×
                             </button>
                         </div>
 
-                        <form onSubmit={addNewFeedback} className="space-y-4">
+                        <form onSubmit={handleFeedbackSubmit} className="space-y-4">
                             <div>
                                 <label className="mb-1 block text-sm font-medium text-gray-700">Title</label>
                                 <input
@@ -202,12 +244,7 @@ export default function SingleBoardView() {
                             <div className="flex justify-end gap-2">
                                 <button
                                     type="button"
-                                    onClick={() => {
-                                        setIsModalOpen(false);
-                                        setErrorMessage("");
-                                        setTitle("");
-                                        setDescription("");
-                                    }}
+                                    onClick={resetFeedbackModal}
                                     className="rounded-md border border-gray-300 px-4 py-2 text-gray-700"
                                 >
                                     Cancel
@@ -217,7 +254,7 @@ export default function SingleBoardView() {
                                     disabled={isSubmitting}
                                     className="rounded-md bg-blue-500 px-4 py-2 text-white hover:bg-blue-600 disabled:cursor-not-allowed disabled:bg-blue-300"
                                 >
-                                    {isSubmitting ? "Submitting..." : "Submit"}
+                                    {isSubmitting ? (editingFeedbackId ? "Updating..." : "Submitting...") : editingFeedbackId ? "Update" : "Submit"}
                                 </button>
                             </div>
                         </form>
@@ -237,6 +274,7 @@ export default function SingleBoardView() {
                             <th className="px-6 py-4">Owner</th>
                             <th className="px-6 py-4">Status</th>
                             <th className="px-6 py-4">Votes</th>
+                            <th className="px-6 py-4 text-right">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -248,8 +286,9 @@ export default function SingleBoardView() {
                                     <td className="px-6 py-4">{feedback.title}</td>
                                     <td className="px-6 py-4">{feedback.description}</td>
                                     <td className="px-6 py-4">
-                                        <p>Submitted by user</p>
+                                        <p>{editedFeedbackIds.includes(feedbackId) ? "Edited by user" : "Submitted by user"}</p>
                                         <h5>{feedback.ownerName}</h5>
+                                        {editedFeedbackIds.includes(feedbackId) && <p className="text-xs text-gray-500">Edited / Updated</p>}
                                     </td>
                                     <td className="px-6 py-4">
                                         <select
@@ -282,6 +321,32 @@ export default function SingleBoardView() {
                                                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                                             />
                                             <span className="font-semibold text-sm">{feedback.voteCount}</span>
+                                        </div>
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                        <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => openEditFeedbackModal(feedback)}
+                                                className="rounded p-2 text-blue-600 hover:bg-blue-50"
+                                                title="Edit feedback"
+                                                aria-label={`Edit feedback ${feedback.title}`}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.379-8.379-2.828-2.828z" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDeleteFeedback(feedbackId)}
+                                                className="rounded p-2 text-red-600 hover:bg-red-50"
+                                                title="Delete feedback"
+                                                aria-label={`Delete feedback ${feedback.title}`}
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path fillRule="evenodd" d="M8.586 2.586A2 2 0 0110 2h.001a2 2 0 011.414.586L12 4h3a1 1 0 110 2h-1v9a2 2 0 01-2 2H8a2 2 0 01-2-2V6H5a1 1 0 110-2h3l.586-1.414zM8 6v9h4V6H8zm2-2.414L10.414 4h-.828L10 3.586z" clipRule="evenodd" />
+                                                </svg>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
